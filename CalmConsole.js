@@ -20,14 +20,14 @@ var CalmConsole = function(options){
 		Close = null,
 		__actions = [],
 		options = options || {},
-		Loaded = false;
+		Loaded = false,
+		DefaultStates = {};
 
 /*
  * ---------------------------------------------------------------------------------
  * Publicly accessible methods
  * ---------------------------------------------------------------------------------
  */
-	
 	/*
 	 * Constructor
 	 */
@@ -48,7 +48,7 @@ var CalmConsole = function(options){
 	};
 
 	/*
-	 * .log()
+	 * public function log()
 	 *
 	 * @param toLog [string|object] the item you want to log
 	 */
@@ -57,7 +57,7 @@ var CalmConsole = function(options){
 	};
 
 	/*
-	 * .warn()
+	 * public function warn()
 	 *
 	 * @param toLog [string|object] the item you want to log
 	 */
@@ -66,7 +66,7 @@ var CalmConsole = function(options){
 	};
 
 	/*
-	 * .error()
+	 * public function error()
 	 *
 	 * @param toLog [string|object] the item you want to log
 	 */
@@ -75,7 +75,7 @@ var CalmConsole = function(options){
 	};
 
 	/*
-	 * .success() - For messages that indicate a successful transaction
+	 * public function success() - For messages that indicate a successful transaction
 	 *
 	 * @param toLog [string|object] the item you want to log
 	 */
@@ -84,7 +84,7 @@ var CalmConsole = function(options){
 	}
 
 	/*
-	 * .special() - For messages that are special 
+	 * public function special() - For messages that are special 
 	 *
 	 * @param toLog [string|object] the item you want to log
 	 */
@@ -93,7 +93,7 @@ var CalmConsole = function(options){
 	}
 
 	/*
-	 * .clear() - Empty the console
+	 * public function clear() - Empty the console
 	 *
 	 * @param toLog [string|object] the item you want to log
 	 */
@@ -102,7 +102,7 @@ var CalmConsole = function(options){
 	};
 
 	/*
-	 * .setOption() - may be removed
+	 * public function setOption() - may be removed
 	 *
 	 * @param property [string] the property you want to change
 	 * @param value [string] the new value of the property
@@ -116,7 +116,7 @@ var CalmConsole = function(options){
 	};
 
 	/*
-	 * .getOption()
+	 * public function getOption()
 	 *
 	 * @param toLog [property] the option you wish to retreive
 	 */
@@ -125,53 +125,33 @@ var CalmConsole = function(options){
 	};
 
 	/*
-	 * .getOptions()
+	 * public function .getOptions()
 	 * 
 	 * Get all options
 	 */
 	this.getOptions = function(){
 		return options;
-	}
+	};
 
 	/*
-	 * .clear() - Clears console and resets to the default state
+	 * public function reset() - Clears console and resets to the default state
 	 *
 	 * @param options [object] defaults for the new console
 	 */
-	this.reset = function(options){
-		//var previous_options = _loadPreviousOptions(); //returns nothing?
-		_clearApplicationState();
-		//_resetApplication();
+	this.reset = function(){
+		_resetApplicationState();
 		
-		this.__init__();
+		RenderedObj.classList.remove('hidden');
 	};
-
-	//for dev only
-	this.viewCookieData = function(name){
-		return _getCookie('CalmConsole.' + name);
-	};
-
-	this.viewdata = function(name){
-		//return _query(name);
-		return localStorage.getItem('CalmConsole.'+ name);
-	}
-	this.setdata = function(name, data){
-		return _store(name, data);
-	}
 
 /*
  * ---------------------------------------------------------------------------------
  *  Private methods
  * ---------------------------------------------------------------------------------
  */
-
 	/*
-	 * _resetApplication() - may be removed
+	 * private function _loadUI() - Build the HTML elements required for the UI
 	 */
-	function _resetApplication(options){
-		return new CalmConsole(options);
-	};
-
 	function _loadUI(){
 		//Create the console
 		var consoleElement = document.createElement('div');
@@ -231,23 +211,28 @@ var CalmConsole = function(options){
 			htmlObj.innerHTML = toLog;
 			classes = (!classes ? 'msg-log' : classes);
 
-		if(typeof classes == 'object'){
-			htmlObj.classList.add(classes.join(' '));
-		}else {
-			htmlObj.classList.add(classes);
-		}
-
+		htmlObj.classList.add(classes);
+		
 		return htmlObj;
 	};
 
 	function _outputObject(toLog, classes){
 		//TODO: build an object, use it as return value
 		//TODO: loop through, get each element's innerText, add all that to the return object
-		var outputObj = {}, clone = toLog;
-		console.log('hihih');
-		//for(var i = 0; i < toLog)
+		var outputObj = document.createElement('li'), clone = Object.create(toLog);
+			outputObj.classList.add(classes);
+			outputObj.classList.add('msg-output-object');
+		
+		//children
+		outputObj.innerText += 'Children:\n';
 
-		return toLog;
+		for(var i = 0; i < clone.children.length; i++){
+			var child_constructor = clone.children[i].constructor.toString().match(/function (.+)\(\)/)[1];
+
+			outputObj.innerText += (i+1) + '. '+ child_constructor + "\n";
+		}
+
+		return outputObj;
 	};
 
 	function _logAction(toLog, classes){
@@ -267,7 +252,7 @@ var CalmConsole = function(options){
 
 	function _loadStyles(){
 		var stylesheet = document.createElement('style');
-			stylesheet.innerHTML = '.CalmConsole {position: fixed; '+ options.position +': 0px; width: 100%; height: 300px; font-size: 1em; color: black; overflow-y: auto; background: white; border-top: 1px solid rgba(0,0,0,0.3); font-family: "Lucida Sans Unicode";} .CalmConsole li {padding: 3px; margin: 0px; border-bottom: 1px solid rgba(0,0,0,0.3)} .CalmConsole .controls {position: absolute; right: 10px; top: 30%;} .CalmConsole.minimized {height: 41px; overflow: hidden; border-bottom: 0px;} .CalmConsole .msg-warning {background-color: #FCF8E3;} .CalmConsole .msg-special {background-color: #D9EDF7;} .CalmConsole .msg-error {background-color: #F2DEDE;} .CalmConsole .msg-success {background-color: #DFF0D8;} .CalmConsole ul {padding: 0px; margin: 0px;} .CalmConsole header {position: relative; font-family: Helvetica, Arial, sans-serif; border-bottom: 1px solid rgba(0,0,0,0.3); background-image: -ms-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -moz-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -o-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #FFFFFF), color-stop(1, #EEEEEE)); background-image: -webkit-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: linear-gradient(to bottom, #FFFFFF 0%, #EEEEEE 100%);} .CalmConsole header h2 {font-size: 1.5em; float: left; margin: 10px;} .CalmConsole header, .CalmConsole ul.msg-list {float: left; width: 100%; font-size: 11px;} .CalmConsole .controls a {position: relative; top: -12px; color: black; font-size: 3.5em; margin-left: 0.5em; text-decoration: none; opacity: 0.8; text-shadow: 1px 1px 1px #ddd;} .CalmConsole .controls a:hover {color: #E2237D; opacity: 1;} .CalmConsole.hidden {display: none;} .CalmConsole.page-top {border-top: 1px solid rgba(0,0,0,0.3);} .CalmConsole .controls .toggle {font-size: 2.4em; top: -16px;}';
+			stylesheet.innerHTML = '.CalmConsole {position: fixed; '+ options.position +': 0px; width: 100%; height: 300px; font-size: 1em; color: black; overflow-y: auto; background: white; border-top: 1px solid rgba(0,0,0,0.3); font-family: "Lucida Sans Unicode";} .CalmConsole li {padding: 3px; margin: 0px; border-bottom: 1px solid rgba(0,0,0,0.3)} .CalmConsole .controls {position: absolute; right: 10px; top: 30%;} .CalmConsole.minimized {height: 41px; overflow: hidden; border-bottom: 0px;} .CalmConsole .msg-warning {background-color: #FCF8E3;} .CalmConsole .msg-special {background-color: #D9EDF7;} .CalmConsole .msg-error {background-color: #F2DEDE;} .CalmConsole .msg-success {background-color: #DFF0D8;} .CalmConsole ul {padding: 0px; margin: 0px;} .CalmConsole header {position: relative; font-family: Helvetica, Arial, sans-serif; border-bottom: 1px solid rgba(0,0,0,0.3); background-image: -ms-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -moz-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -o-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #FFFFFF), color-stop(1, #EEEEEE)); background-image: -webkit-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: linear-gradient(to bottom, #FFFFFF 0%, #EEEEEE 100%);} .CalmConsole header h2 {font-size: 1.5em; float: left; margin: 10px;} .CalmConsole header, .CalmConsole ul.msg-list {float: left; width: 100%; font-size: 11px;} .CalmConsole .controls a {position: relative; top: -12px; color: black; font-size: 3.5em; margin-left: 0.5em; text-decoration: none; opacity: 0.4; text-shadow: 1px 1px 1px #ddd;} .CalmConsole .controls a:hover {color: #E2237D; opacity: 1;} .CalmConsole.hidden {display: none;} .CalmConsole.page-top {border-top: 1px solid rgba(0,0,0,0.3);} .CalmConsole .controls .toggle {font-size: 2.4em; top: -16px;}';
 
 		Loaded = true;
 
@@ -275,9 +260,22 @@ var CalmConsole = function(options){
 	};
 
 	function _setApplicationState(){
-		if(!_query('toggle')) _store('toggle', 0);
-		if(!_query('close')) _store('close', 1);
+		//setup default states
+		DefaultStates = {
+			'toggle': 0, //0 = show, 1 = hide
+			'close': 1, //0 = hide, 1 = show
+		};
 
+		if(!_query('toggle')) _store('toggle', DefaultStates.toggle);
+		if(!_query('close')) _store('close', DefaultStates.close);
+
+		return true;
+	};
+
+	function _resetApplicationState(){
+		_store('toggle', DefaultStates.toggle, 'Thu, 01 Jan 1970 00:00:01 GMT');
+		_store('close', DefaultStates.close, 'Thu, 01 Jan 1970 00:00:01 GMT');
+	
 		return true;
 	};
 
@@ -296,13 +294,6 @@ var CalmConsole = function(options){
 			return localStorage.setItem('CalmConsole.'+ item, data);
 		}
 	}
-
-	function _clearApplicationState(){
-		_store('toggle', 0, 'Thu, 01 Jan 1970 00:00:01 GMT');
-		_store('close', 1, 'Thu, 01 Jan 1970 00:00:01 GMT');
-	
-		return true;
-	};
 
 	function _loadListeners(){
 		if(!Loaded) return;
@@ -370,7 +361,7 @@ var CalmConsole = function(options){
  *  Overwrite console.[method]
  * ---------------------------------------------------------------------------------
  */
-	console.log = function(toLog){return _logAction(toLog);};
+	//console.log = function(toLog){return _logAction(toLog);};
 	console.warn = function(toLog){return _logAction(toLog, 'msg-warning');};
 	console.error = function(toLog){return _logAction(toLog, 'msg-error');};
 
