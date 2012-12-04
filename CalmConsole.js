@@ -6,10 +6,10 @@
 
 //TODO:
 //- push all logged messages to __actions (or something) and parse/display later to cut down on calls to .appendChild()
-//- preserve console data (if option is set to do so) upon navigation/refresh (localstorage/cookies)
 //- add documentation
-//- BUG: cannot log anything after the console has been closed and reset
+//- BUG: cannot log anything after the console has been closed and reset (adds a new console on top of old one)
 //- add support for attachEvent in case mobile IE still doesn't support addEventListener
+//- add confirm functionality to close button, possibly in form of "command line" (which still needs to be written)?
 var CalmConsole = function(options){
 	'use strict';
 
@@ -22,21 +22,17 @@ var CalmConsole = function(options){
 		options = options || {},
 		Loaded = false;
 
-
+/*
+ * ---------------------------------------------------------------------------------
+ * Publicly accessible methods
+ * ---------------------------------------------------------------------------------
+ */
+	
 	/*
-	 * ---------------------------------------------------------------------------------
-	 * Publicly accessible methods
-	 * ---------------------------------------------------------------------------------
+	 * Constructor
 	 */
 	this.__init__ = function(){
-		//options prototype
-		//options {
-		//	removeOnClose: false,
-		//	useCookies: false, <-- if useLocalStorage is false, set to true
-		//	useLocalStorage: true, <-- depending on support in user's browser
-		//}
 		options = {
-			removeOnClose: options.removeOnClose || false,
 			useLocalStorage: options.useLocalStorage && localStorage || true,
 			position: options.position || 'bottom',
 		};
@@ -51,53 +47,103 @@ var CalmConsole = function(options){
 		return CalmObj;
 	};
 
+	/*
+	 * .log()
+	 *
+	 * @param toLog [string|object] the item you want to log
+	 */
 	this.log = function(toLog){
 		return _logAction(toLog);
 	};
 
+	/*
+	 * .warn()
+	 *
+	 * @param toLog [string|object] the item you want to log
+	 */
 	this.warn = function(toLog){
 		return _logAction(toLog, 'msg-warning');
 	};
 
+	/*
+	 * .error()
+	 *
+	 * @param toLog [string|object] the item you want to log
+	 */
 	this.error = function(toLog){
 		return _logAction(toLog, 'msg-error');
 	};
 
+	/*
+	 * .success() - For messages that indicate a successful transaction
+	 *
+	 * @param toLog [string|object] the item you want to log
+	 */
 	this.success = function(toLog){
 		return _logAction(toLog, 'msg-success');
 	}
 
+	/*
+	 * .special() - For messages that are special 
+	 *
+	 * @param toLog [string|object] the item you want to log
+	 */
 	this.special = function(toLog){
 		return _logAction(toLog, 'msg-special');
 	}
 
+	/*
+	 * .clear() - Empty the console
+	 *
+	 * @param toLog [string|object] the item you want to log
+	 */
 	this.clear = function(){
 		RenderedObj.innerHTML = '';
 	};
 
+	/*
+	 * .setOption() - may be removed
+	 *
+	 * @param property [string] the property you want to change
+	 * @param value [string] the new value of the property
+	 */
 	this.setOption = function(property, value){
 		options[property] = value;
 		//update UI here
-		_resetApplication(options);
+		//_resetApplication(options);
 
 		return 'OPTION SET: options.'+ property +' = '+options[property];
 	};
 
+	/*
+	 * .getOption()
+	 *
+	 * @param toLog [property] the option you wish to retreive
+	 */
 	this.getOption = function(property){
-		return options.property;
+		return options[property];
 	};
 
+	/*
+	 * .getOptions()
+	 * 
+	 * Get all options
+	 */
 	this.getOptions = function(){
 		return options;
 	}
 
 	/*
-	 * Clears console and resets to the default state
+	 * .clear() - Clears console and resets to the default state
+	 *
+	 * @param options [object] defaults for the new console
 	 */
 	this.reset = function(options){
-		var previous_options = _loadPreviousOptions(); //returns nothing?
+		//var previous_options = _loadPreviousOptions(); //returns nothing?
 		_clearApplicationState();
-		_resetApplication();
+		//_resetApplication();
+		
+		this.__init__();
 	};
 
 	//for dev only
@@ -113,19 +159,20 @@ var CalmConsole = function(options){
 		return _store(name, data);
 	}
 
+/*
+ * ---------------------------------------------------------------------------------
+ *  Private methods
+ * ---------------------------------------------------------------------------------
+ */
+
 	/*
-	 * ---------------------------------------------------------------------------------
-	 *  Private methods
-	 * ---------------------------------------------------------------------------------
+	 * _resetApplication() - may be removed
 	 */
-	
 	function _resetApplication(options){
 		return new CalmConsole(options);
 	};
 
 	function _loadUI(){
-		if(_query('.close') == 1) return;
-
 		//Create the console
 		var consoleElement = document.createElement('div');
 			consoleElement.classList.add('CalmConsole');
@@ -134,13 +181,13 @@ var CalmConsole = function(options){
 		//Create the minimize/maximize toggle element
 		var toggleElement = document.createElement('a');
 			toggleElement.classList.add('toggle');
-			toggleElement.innerHTML = 'Minimize';
+			toggleElement.innerHTML = '&#x25BC;';
 			toggleElement.href = '#';
 
 		//Create the close console element
 		var closeElement = document.createElement('a');
 			closeElement.classList.add('close');
-			closeElement.innerHTML = 'Close';
+			closeElement.innerHTML = '&times;';
 			closeElement.href = '#';
 
 		//Create the console header element
@@ -220,7 +267,7 @@ var CalmConsole = function(options){
 
 	function _loadStyles(){
 		var stylesheet = document.createElement('style');
-			stylesheet.innerHTML = '.CalmConsole {position: fixed; '+ options.position +': 0px; width: 100%; height: 300px; font-size: 1em; color: black; overflow-y: auto; background: white; border-top: 1px solid rgba(0,0,0,0.3); border-bottom: 1px solid rgba(0,0,0,0.3); font-family: "Lucida Sans Unicode";} .CalmConsole li {padding: 3px; margin: 0px; border-bottom: 1px solid rgba(0,0,0,0.3)} .CalmConsole .controls {position: absolute; right: 10px; top: 30%;} .CalmConsole.minimized {height: 41px; overflow: hidden; border-bottom: 0px;} .CalmConsole.minimized .toggle {background: rgba(0,0,0,0.1);} .CalmConsole .msg-warning {background-color: #FCF8E3;} .CalmConsole .msg-special {background-color: #D9EDF7;} .CalmConsole .msg-error {background-color: #F2DEDE;} .CalmConsole .msg-success {background-color: #DFF0D8;} .CalmConsole ul {padding: 0px; margin: 0px;} .CalmConsole header {position: relative; font-family: Helvetica, Arial, sans-serif; border-bottom: 1px solid rgba(0,0,0,0.3); background-image: -ms-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -moz-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -o-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #FFFFFF), color-stop(1, #EEEEEE)); background-image: -webkit-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: linear-gradient(to bottom, #FFFFFF 0%, #EEEEEE 100%);} .CalmConsole header h2 {font-size: 1.5em; float: left; margin: 10px;} .CalmConsole header, .CalmConsole ul.msg-list {float: left; width: 100%; font-size: 11px;} .CalmConsole .controls a {position: relative; top: 1px; color: black; margin-right: 1px; padding: 14px 13px; text-decoration: none;} .CalmConsole .controls a:hover {background-color: rgba(0,0,0,0.1);} .CalmConsole.hidden {display: none;}';
+			stylesheet.innerHTML = '.CalmConsole {position: fixed; '+ options.position +': 0px; width: 100%; height: 300px; font-size: 1em; color: black; overflow-y: auto; background: white; border-top: 1px solid rgba(0,0,0,0.3); font-family: "Lucida Sans Unicode";} .CalmConsole li {padding: 3px; margin: 0px; border-bottom: 1px solid rgba(0,0,0,0.3)} .CalmConsole .controls {position: absolute; right: 10px; top: 30%;} .CalmConsole.minimized {height: 41px; overflow: hidden; border-bottom: 0px;} .CalmConsole .msg-warning {background-color: #FCF8E3;} .CalmConsole .msg-special {background-color: #D9EDF7;} .CalmConsole .msg-error {background-color: #F2DEDE;} .CalmConsole .msg-success {background-color: #DFF0D8;} .CalmConsole ul {padding: 0px; margin: 0px;} .CalmConsole header {position: relative; font-family: Helvetica, Arial, sans-serif; border-bottom: 1px solid rgba(0,0,0,0.3); background-image: -ms-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -moz-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -o-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #FFFFFF), color-stop(1, #EEEEEE)); background-image: -webkit-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: linear-gradient(to bottom, #FFFFFF 0%, #EEEEEE 100%);} .CalmConsole header h2 {font-size: 1.5em; float: left; margin: 10px;} .CalmConsole header, .CalmConsole ul.msg-list {float: left; width: 100%; font-size: 11px;} .CalmConsole .controls a {position: relative; top: -12px; color: black; font-size: 3.5em; margin-left: 0.5em; text-decoration: none; opacity: 0.8; text-shadow: 1px 1px 1px #ddd;} .CalmConsole .controls a:hover {color: #E2237D; opacity: 1;} .CalmConsole.hidden {display: none;} .CalmConsole.page-top {border-top: 1px solid rgba(0,0,0,0.3);} .CalmConsole .controls .toggle {font-size: 2.4em; top: -16px;}';
 
 		Loaded = true;
 
@@ -229,7 +276,7 @@ var CalmConsole = function(options){
 
 	function _setApplicationState(){
 		if(!_query('toggle')) _store('toggle', 0);
-		if(!_query('close')) _store('close', 0);
+		if(!_query('close')) _store('close', 1);
 
 		return true;
 	};
@@ -251,13 +298,9 @@ var CalmConsole = function(options){
 	}
 
 	function _clearApplicationState(){
-		if(!options.useLocalStorage){
-			_store('CalmConsole.toggle', 0, 'Thu, 01 Jan 1970 00:00:01 GMT');
-			_store('CalmConsole.close', 0, 'Thu, 01 Jan 1970 00:00:01 GMT');
-		}else {
-			localStorage.clear();
-		}
-
+		_store('toggle', 0, 'Thu, 01 Jan 1970 00:00:01 GMT');
+		_store('close', 1, 'Thu, 01 Jan 1970 00:00:01 GMT');
+	
 		return true;
 	};
 
@@ -266,10 +309,14 @@ var CalmConsole = function(options){
 
 		if(_query('toggle') == 0){
 			RenderedObj.classList.remove('minimized');
-			Toggle.innerHTML = 'Minimize';
+			Toggle.innerHTML = '&#x25BC;';
 		}else {
 			RenderedObj.classList.add('minimized');
-			Toggle.innerHTML = 'Maximize';
+			Toggle.innerHTML = '&#x25B2;';
+		}
+
+		if(_query('close') == 0){
+			RenderedObj.classList.add('hidden');
 		}
 
 		Toggle.addEventListener('click', function(evt){
@@ -277,12 +324,12 @@ var CalmConsole = function(options){
 
 			if(RenderedObj.classList.contains('minimized')){
 				RenderedObj.classList.remove('minimized');
-				Toggle.innerHTML = 'Minimize';
+				Toggle.innerHTML = '&#x25BC;';
 
 				_store('toggle', 0);
 			}else {
 				RenderedObj.classList.add('minimized');
-				Toggle.innerHTML = 'Maximize';
+				Toggle.innerHTML = '&#x25B2;';
 
 				_store('toggle', 1);
 			}
@@ -291,12 +338,9 @@ var CalmConsole = function(options){
 		Close.addEventListener('click', function(evt){
 			evt.preventDefault();
 
-			if(options.removeOnClose){
-				RenderedObj.parentElement.removeChild(RenderedObj);
-			}else {
-				RenderedObj.classList.add('hidden');
-			}
-			_store('CalmConsole.close', 1);
+			RenderedObj.classList.add('hidden');
+			
+			_store('close', 0);
 		});
 	};
 
@@ -321,25 +365,24 @@ var CalmConsole = function(options){
 		return null;
 	}
 
-	/*
-	 * ---------------------------------------------------------------------------------
-	 *  Overwrite console.[method]
-	 * ---------------------------------------------------------------------------------
-	 */
+/*
+ * ---------------------------------------------------------------------------------
+ *  Overwrite console.[method]
+ * ---------------------------------------------------------------------------------
+ */
 	console.log = function(toLog){return _logAction(toLog);};
 	console.warn = function(toLog){return _logAction(toLog, 'msg-warning');};
 	console.error = function(toLog){return _logAction(toLog, 'msg-error');};
 
-	/*
-	 * ---------------------------------------------------------------------------------
-	 *  Call the constructor
-	 * ---------------------------------------------------------------------------------
-	 */
+/*
+ * ---------------------------------------------------------------------------------
+ *  Call the constructor
+ * ---------------------------------------------------------------------------------
+ */
 	return this.__init__();
 };
 
 var calm = new CalmConsole({
-		removeOnClose: false,
 		useLocalStorage: true,
 	});
 
