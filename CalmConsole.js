@@ -224,6 +224,7 @@ var CalmConsole = function(options){
 
 			//current object
 			outputObj.innerHTML += '<p><em>Current Object: </em>';
+			//BUG: .match() returns no matches on iPad
 			outputObj.innerHTML += '<p class="t1">'+ clone.constructor.toString().match(/function (.+)\(\)/)[1];
 			
 			if(clone.classList.length > 0){
@@ -235,7 +236,6 @@ var CalmConsole = function(options){
 			}
 
 			outputObj.innerHTML += '</p>';
-			
 
 			//children
 			if(clone.children.length > 0){
