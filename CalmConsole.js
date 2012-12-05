@@ -6,22 +6,22 @@
 
 //TODO:
 //- push all logged messages to __actions (or something) and parse/display later to cut down on calls to .appendChild()
-//- add documentation
-//- BUG: cannot log anything after the console has been closed and reset (adds a new console on top of old one)
 //- add support for attachEvent in case mobile IE still doesn't support addEventListener
 //- add confirm functionality to close button, possibly in form of "command line" (which still needs to be written)?
+//- command line functionality
 var CalmConsole = function(options){
 	'use strict';
 
 	var CalmObj = this,
-		RenderedObj = null,
 		ActionList = {},
+		DefaultStates = {},
+		options = options || {},
+		RenderedObj = null,
 		Toggle = null,
 		Close = null,
-		__actions = [],
-		options = options || {},
 		Loaded = false,
-		DefaultStates = {};
+		__actions = [];
+		
 
 /*
  * ---------------------------------------------------------------------------------
@@ -217,22 +217,30 @@ var CalmConsole = function(options){
 	};
 
 	function _outputObject(toLog, classes){
-		//TODO: build an object, use it as return value
-		//TODO: loop through, get each element's innerText, add all that to the return object
-		var outputObj = document.createElement('li'), clone = Object.create(toLog);
-			outputObj.classList.add(classes);
-			outputObj.classList.add('msg-output-object');
-		
-		//children
-		outputObj.innerText += 'Children:\n';
+		if(toLog){
+			var outputObj = document.createElement('li'), clone = Object.create(toLog);
+				outputObj.classList.add(classes);
+				outputObj.classList.add('msg-output-object');
 
-		for(var i = 0; i < clone.children.length; i++){
-			var child_constructor = clone.children[i].constructor.toString().match(/function (.+)\(\)/)[1];
+			//current object
+			outputObj.innerHTML += '<p>Current Object: <strong>'+ clone.constructor.toString().match(/function (.+)\(\)/)[1] +'</strong>';
+			outputObj.innerHTML += '';
+			
 
-			outputObj.innerText += (i+1) + '. '+ child_constructor + "\n";
+			//children
+			outputObj.innerHTML += 'Children: <strong>'+ clone.children.length +'</strong><br />';
+
+			for(var i = 0; i < clone.children.length; i++){
+				var child_constructor = clone.children[i].constructor.toString().match(/function (.+)\(\)/)[1];
+
+				outputObj.innerHTML += '<p class="bump">'+ (i+1) + '. '+ child_constructor + '</p>';
+			}
+			outputObj.innerHTML += '</p>';
+
+			return outputObj;
 		}
-
-		return outputObj;
+		
+		CalmObj.error('Error: DOM Element Not Found');
 	};
 
 	function _logAction(toLog, classes){
@@ -252,7 +260,7 @@ var CalmConsole = function(options){
 
 	function _loadStyles(){
 		var stylesheet = document.createElement('style');
-			stylesheet.innerHTML = '.CalmConsole {position: fixed; '+ options.position +': 0px; width: 100%; height: 300px; font-size: 1em; color: black; overflow-y: auto; background: white; border-top: 1px solid rgba(0,0,0,0.3); font-family: "Lucida Sans Unicode";} .CalmConsole li {padding: 3px; margin: 0px; border-bottom: 1px solid rgba(0,0,0,0.3)} .CalmConsole .controls {position: absolute; right: 10px; top: 30%;} .CalmConsole.minimized {height: 41px; overflow: hidden; border-bottom: 0px;} .CalmConsole .msg-warning {background-color: #FCF8E3;} .CalmConsole .msg-special {background-color: #D9EDF7;} .CalmConsole .msg-error {background-color: #F2DEDE;} .CalmConsole .msg-success {background-color: #DFF0D8;} .CalmConsole ul {padding: 0px; margin: 0px;} .CalmConsole header {position: relative; font-family: Helvetica, Arial, sans-serif; border-bottom: 1px solid rgba(0,0,0,0.3); background-image: -ms-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -moz-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -o-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #FFFFFF), color-stop(1, #EEEEEE)); background-image: -webkit-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: linear-gradient(to bottom, #FFFFFF 0%, #EEEEEE 100%);} .CalmConsole header h2 {font-size: 1.5em; float: left; margin: 10px;} .CalmConsole header, .CalmConsole ul.msg-list {float: left; width: 100%; font-size: 11px;} .CalmConsole .controls a {position: relative; top: -12px; color: black; font-size: 3.5em; margin-left: 0.5em; text-decoration: none; opacity: 0.4; text-shadow: 1px 1px 1px #ddd;} .CalmConsole .controls a:hover {color: #E2237D; opacity: 1;} .CalmConsole.hidden {display: none;} .CalmConsole.page-top {border-top: 1px solid rgba(0,0,0,0.3);} .CalmConsole .controls .toggle {font-size: 2.4em; top: -16px;}';
+			stylesheet.innerHTML = '.CalmConsole {position: fixed; '+ options.position +': 0px; width: 100%; height: 300px; font-size: 1em; color: black; overflow-y: auto; background: white; border-top: 1px solid rgba(0,0,0,0.3); font-family: "Lucida Sans Unicode";} .CalmConsole li {padding: 3px; margin: 0px; border-bottom: 1px solid rgba(0,0,0,0.3)} .CalmConsole .controls {position: absolute; right: 10px; top: 30%;} .CalmConsole.minimized {height: 41px; overflow: hidden; border-bottom: 0px;} .CalmConsole .msg-warning {background-color: #FCF8E3;} .CalmConsole .msg-special {background-color: #D9EDF7;} .CalmConsole .msg-error {background-color: #F2DEDE;} .CalmConsole .msg-success {background-color: #DFF0D8;} .CalmConsole ul {padding: 0px; margin: 0px;} .CalmConsole header {position: relative; font-family: Helvetica, Arial, sans-serif; border-bottom: 1px solid rgba(0,0,0,0.3); background-image: -ms-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -moz-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -o-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #FFFFFF), color-stop(1, #EEEEEE)); background-image: -webkit-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: linear-gradient(to bottom, #FFFFFF 0%, #EEEEEE 100%);} .CalmConsole header h2 {font-size: 1.5em; float: left; margin: 10px;} .CalmConsole header, .CalmConsole ul.msg-list {float: left; width: 100%; font-size: 11px;} .CalmConsole .controls a {position: relative; top: -12px; color: black; font-size: 3.5em; margin-left: 0.5em; text-decoration: none; opacity: 0.4; text-shadow: 1px 1px 1px #ddd;} .CalmConsole .controls a:hover {color: #E2237D; opacity: 1;} .CalmConsole.hidden {display: none;} .CalmConsole.page-top {border-top: 1px solid rgba(0,0,0,0.3);} .CalmConsole .controls .toggle {font-size: 2.4em; top: -16px;} .CalmConsole p {padding: 0px; margin: 0px;} .CalmConsole p.bump {margin-left: 6px;}';
 
 		Loaded = true;
 
