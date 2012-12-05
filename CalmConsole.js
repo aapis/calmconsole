@@ -223,9 +223,14 @@ var CalmConsole = function(options){
 				outputObj.classList.add('msg-output-object');
 
 			//current object
-			outputObj.innerHTML += '<p><em>Current Object: </em>';
+			outputObj.innerHTML += '<p><em>Current Object: </em><p class="t1">';
 			//BUG: .match() returns no matches on iPad
-			outputObj.innerHTML += '<p class="t1">'+ clone.constructor.toString().match(/function (.+)\(\)/)[1];
+			//try/catch doesn't help...
+			try {
+				outputObj.innerHTML += clone.constructor.toString().match(/function (.+)\(\)/)[1];
+			}catch(Exception){
+				throw new Exception();
+			}
 			
 			if(clone.classList.length > 0){
 				outputObj.innerHTML += '<p class="t2">.className: <strong>'+ clone.classList +'</strong></p>';
