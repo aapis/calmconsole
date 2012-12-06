@@ -198,6 +198,9 @@ var CalmConsole = function(options){
 		RenderedObj.appendChild(headerElement);
 		RenderedObj.appendChild(ActionList);
 
+		//set utility context
+		Util.Element.renderContext = RenderedObj;
+		Util.Element.render();
 		//style everything
 		_loadStyles();
 	};
@@ -223,6 +226,8 @@ var CalmConsole = function(options){
 				outputObj.classList.add('msg-output-object');
 			var currObjName = (clone.constructor.name ? clone.constructor.name : clone.constructor.toString());
 
+			console.log(Util.Element.div());
+
 			//current object
 			outputObj.innerHTML += '<p><em>Current Object: </em><span class="t1">';
 				outputObj.innerHTML += '<span class="t2">'+ currObjName +' {';
@@ -245,7 +250,7 @@ var CalmConsole = function(options){
 				for(var i = 0; i < clone.children.length; i++){
 					var childObjName = (clone.children[i].constructor.name ? clone.children[i].constructor.name : clone.children[i].constructor.toString());
 
-					outputObj.innerHTML += '<span class="t2">'+ (i+1) + '. '+  childObjName +' {';
+						outputObj.innerHTML += '<span class="t2">'+ (i+1) + '. '+  childObjName +' {';
 							if(clone.children[i].classList.length > 0)
 								outputObj.innerHTML += '<span>classList: <strong>'+ clone.children[i].classList +'</strong>; </span>';
 							if(clone.children[i].id)
@@ -260,7 +265,6 @@ var CalmConsole = function(options){
 				outputObj.innerHTML += '</p>';
 			}
 
-			outputObj.innerHTML += '</p>';
 	
 			//attach a listener so we can shrink/expand each object
 			outputObj.addEventListener('click', function(evt){
@@ -399,6 +403,91 @@ var CalmConsole = function(options){
 		}
 		return null;
 	}
+
+/*
+ * ---------------------------------------------------------------------------------
+ * Utilities
+ * ---------------------------------------------------------------------------------
+ */
+
+ 	var Util = {
+ 		Element: {
+			_elements: [],
+			renderContext: {},
+
+			/*
+			 * Creates a div element
+			 *
+			 * @param options [type: object] the initial settings for the new object
+			 */
+			div: function(options){
+				var el = document.createElement('div');
+
+				this._elements.push(el);
+
+				return el;
+			},
+
+			/*
+			 * Creates a paragraph element
+			 *
+			 * @param options [type: object] the initial settings for the new object
+			 */
+			p: function(options){
+				var el = document.createElement('p');
+
+				this._elements.push(el);
+
+				return el;
+			},
+
+			/*
+			 * Creates a span element
+			 *
+			 * @param options [type: object] the initial settings for the new object
+			 */
+			span: function(options){
+				var el = document.createElement('span');
+
+				this._elements.push(el);
+
+				return el;
+			},
+
+			/*
+			 * Creates a button element
+			 *
+			 * @param options [type: object] the initial settings for the new object
+			 */
+			button: function(options){
+				var el = document.createElement('button');
+
+				this._elements.push(el);
+
+				return el;
+			},
+
+			/*
+			 * Empties the element array
+			 *
+			 * @param options [type: object] the initial settings for the new object
+			 */
+			clearElements: function(){
+				this._elements = [];
+			},
+
+			/*
+			 * Renders any elements added to the elements array
+			 *
+			 * @param options [type: object] the initial settings for the new object
+			 */
+			render: function(){
+				for(var i = 0; i < this._elements.length; i++){
+					this.renderContext.appendChild(this._elements[i]);
+				}
+			},
+		},
+ 	}
 
 /*
  * ---------------------------------------------------------------------------------
