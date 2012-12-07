@@ -35,6 +35,7 @@ var CalmConsole = function(options){
 		options = {
 			useLocalStorage: options.useLocalStorage && localStorage || true,
 			position: options.position || 'bottom',
+			max_string_length: options.position || 20,
 		};
 		
 		//create cookies or store initial data to localstorage db
@@ -224,27 +225,26 @@ var CalmConsole = function(options){
 			var outputObj = document.createElement('li'), clone = Object.create(toLog);
 				outputObj.classList.add(classes);
 				outputObj.classList.add('msg-output-object');
-			var currObjName = (clone.constructor.name ? clone.constructor.name : clone.constructor.toString());
+			var currObjName = (clone.constructor.name ? clone.constructor.name : clone.constructor.toString()),
+				outputStr = '';
 
-			console.log(Util.Element.div());
+
 
 			//current object
-			outputObj.innerHTML += '<p><em>Current Object: </em><span class="t1">';
-				outputObj.innerHTML += '<span class="t2">'+ currObjName +' {';
-					if(clone.classList.length > 0)
-						outputObj.innerHTML += '<span>classList: <strong>'+ clone.classList +'</strong>; </span>';
-					if(clone.id)
-						outputObj.innerHTML += '<span>id: <strong>'+ clone.id +'</strong>; </span>';
-					if(clone.offsetWidth > 0)
-						outputObj.innerHTML += '<span>width: <strong>'+ clone.offsetWidth +'px</strong>; </span>';
-					if(clone.offsetHeight > 0)
-						outputObj.innerHTML += '<span>width: <strong>'+ clone.offsetHeight +'px</strong>; </span>';
-					outputObj.innerHTML += '</span>';
-				outputObj.innerHTML += '}</span>';
-			outputObj.innerHTML += '</p>';
+				outputStr += '<span class="t1">'+ currObjName +' {';
+					for(var prop in clone){
+						//console.log('clone.'+ prop +' = '+ clone[prop]);
+						if(clone[prop] && typeof clone[prop] != 'function'){
+							outputStr += '<p class="t2">'+ prop + ' '+ Util.String.truncate(clone[prop], options)+'</p>';
+						}
+					}
+				outputStr += '}</span>';
+			outputStr += '</p>';
+			
+			outputObj.innerHTML = outputStr;
 
 			//children
-			if(clone.children.length > 0){
+			/*if(clone.children.length > 0){
 				outputObj.innerHTML += '<p><em>Children: <strong>'+ clone.children.length +'</strong></em><span class="t1">';
 
 				for(var i = 0; i < clone.children.length; i++){
@@ -263,7 +263,7 @@ var CalmConsole = function(options){
 				}
 					outputObj.innerHTML += '</span>';
 				outputObj.innerHTML += '</p>';
-			}
+			}*/
 
 	
 			//attach a listener so we can shrink/expand each object
@@ -300,7 +300,7 @@ var CalmConsole = function(options){
 
 	function _loadStyles(){
 		var stylesheet = document.createElement('style');
-			stylesheet.innerHTML = '.CalmConsole ::selection {background: transparent;} .CalmConsole {position: fixed; '+ options.position +': 0px; width: 100%; height: 300px; font-size: 1em; color: black; overflow-y: auto; background: white; border-top: 1px solid rgba(0,0,0,0.3); font-family: "Lucida Sans Unicode";} .CalmConsole li {padding: 3px; margin: 0px; border-bottom: 1px solid rgba(0,0,0,0.3);} .CalmConsole li:hover {} .CalmConsole li.msg-output-object {height: 30px; overflow: hidden; cursor: pointer;} .CalmConsole li.msg-output-object-expanded {height: auto;} .CalmConsole .controls {position: absolute; right: 10px; top: -10%;} .CalmConsole.minimized {height: 41px; overflow: hidden; border-bottom: 0px;} .CalmConsole .msg-warning {background-color: #FCF8E3;} .CalmConsole .msg-special {background-color: #D9EDF7;} .CalmConsole .msg-error {background-color: #F2DEDE;} .CalmConsole .msg-success {background-color: #DFF0D8;} .CalmConsole ul {padding: 0px; margin: 0px;} .CalmConsole header {position: relative; font-family: Helvetica, Arial, sans-serif; border-bottom: 1px solid rgba(0,0,0,0.3); background-image: -ms-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -moz-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -o-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #FFFFFF), color-stop(1, #EEEEEE)); background-image: -webkit-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: linear-gradient(to bottom, #FFFFFF 0%, #EEEEEE 100%);} .CalmConsole header h2 {font-size: 1.5em; float: left; margin: 10px;} .CalmConsole header, .CalmConsole ul.msg-list {float: left; width: 100%; font-size: 11px;} .CalmConsole .controls a {color: black; font-size: 3.5em; margin-left: 0.5em; text-decoration: none; opacity: 0.4; text-shadow: 1px 1px 1px #ddd;} .CalmConsole .controls a:hover {color: #E2237D; opacity: 1;} .CalmConsole.hidden {display: none;} .CalmConsole.page-top {border-top: 1px solid rgba(0,0,0,0.3);} .CalmConsole .controls .toggle {font-size: 2.4em;} .CalmConsole p {padding: 0px; margin: 0px;} .CalmConsole .t1 {margin-left: 6px;} .CalmConsole .t2 {margin-left: 12px;} .CalmConsole .t3 {margin-left: 18px;}';
+			stylesheet.innerHTML = '.CalmConsole ::selection {background: transparent;} .CalmConsole {position: fixed; '+ options.position +': 0px; width: 100%; height: 300px; font-size: 1em; color: black; overflow-y: auto; background: white; border-top: 1px solid rgba(0,0,0,0.3); font-family: "Lucida Sans Unicode";} .CalmConsole li {padding: 3px; margin: 0px; border-bottom: 1px solid rgba(0,0,0,0.3);} .CalmConsole li:hover {} .CalmConsole li.msg-output-object {height: 30px; overflow: hidden; cursor: pointer;} .CalmConsole li.msg-output-object-expanded {height: auto;} .CalmConsole .controls {position: absolute; right: 10px; top: -10%;} .CalmConsole.minimized {height: 41px; overflow: hidden; border-bottom: 0px;} .CalmConsole .msg-warning {background-color: #FCF8E3;} .CalmConsole .msg-special {background-color: #D9EDF7;} .CalmConsole .msg-error {background-color: #F2DEDE;} .CalmConsole .msg-success {background-color: #DFF0D8;} .CalmConsole ul {padding: 0px; margin: 0px;} .CalmConsole header {position: relative; font-family: Helvetica, Arial, sans-serif; border-bottom: 1px solid rgba(0,0,0,0.3); background-image: -ms-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -moz-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -o-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #FFFFFF), color-stop(1, #EEEEEE)); background-image: -webkit-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: linear-gradient(to bottom, #FFFFFF 0%, #EEEEEE 100%);} .CalmConsole header h2 {font-size: 1.5em; float: left; margin: 10px;} .CalmConsole header, .CalmConsole ul.msg-list {float: left; width: 100%; font-size: 11px;} .CalmConsole .controls a {color: black; font-size: 3.5em; margin-left: 0.5em; text-decoration: none; opacity: 0.4; text-shadow: 1px 1px 1px #ddd;} .CalmConsole .controls a:hover {color: #E2237D; opacity: 1;} .CalmConsole.hidden {display: none;} .CalmConsole.page-top {border-top: 1px solid rgba(0,0,0,0.3);} .CalmConsole .controls .toggle {font-size: 2.4em;} .CalmConsole p {padding: 0px; margin: 0px;} .CalmConsole .t1 {margin-left: 6px;} .CalmConsole .t2 {margin: 0px 12px; border-bottom: 1px solid rgba(0,0,0,0.1); padding: 3px 0px;}';
 
 		Loaded = true;
 
@@ -410,8 +410,8 @@ var CalmConsole = function(options){
  * ---------------------------------------------------------------------------------
  */
 
- 	var Util = {
- 		Element: {
+	var Util = {
+		Element: {
 			_elements: [],
 			renderContext: {},
 
@@ -472,7 +472,7 @@ var CalmConsole = function(options){
 			 *
 			 * @param options [type: object] the initial settings for the new object
 			 */
-			clearElements: function(){
+			empty: function(){
 				this._elements = [];
 			},
 
@@ -487,7 +487,36 @@ var CalmConsole = function(options){
 				}
 			},
 		},
- 	}
+
+		String: {
+			truncate: function(str, options){
+				var type = typeof str,
+					output = null;
+
+				if(type == 'string'){
+					var processed_str = str.substring(0, options.max_string_length).split(" ").slice(0, -1);
+
+					if(processed_str.length > 0){
+						output = '['+ type +']: <strong>' + this.stripHTML(processed_str.join(" ")) + "...</strong>";
+					}else {
+						output = '['+ type +']: <strong>' + str +'</strong>';
+					}
+				}else {
+					output = '['+ type +']: <strong>' + str + '</strong>';
+				}
+
+				return output;
+			},
+
+			stripHTML: function(str){
+				var tmp = document.createElement("div");
+
+				tmp.innerHTML = str;
+
+				return tmp.textContent||tmp.innerText;
+			},
+		},
+	}
 
 /*
  * ---------------------------------------------------------------------------------
@@ -508,6 +537,7 @@ var CalmConsole = function(options){
 
 var calm = new CalmConsole({
 		useLocalStorage: true,
+		max_string_length: 20,
 	});
 
 
