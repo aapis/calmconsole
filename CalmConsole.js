@@ -8,7 +8,8 @@
 //- push all logged messages to __actions (or something) and parse/display later to cut down on calls to .appendChild()
 //- add support for attachEvent in case mobile IE still doesn't support addEventListener
 //- add confirm functionality to close button, possibly in form of "command line" (which still needs to be written)?
-//- command line functionality
+//- "command line" functionality
+//- truncate function needs some work
 var CalmConsole = function(options){
 	'use strict';
 
@@ -36,7 +37,7 @@ var CalmConsole = function(options){
 		options = {
 			useLocalStorage: options.useLocalStorage && localStorage || false,
 			position: options.position || 'bottom',
-			max_string_length: options.position || 20,
+			max_string_length: options.max_string_length || 80,
 		};
 		
 		//create cookies or store initial data to localstorage db
@@ -200,9 +201,6 @@ var CalmConsole = function(options){
 		RenderedObj.appendChild(headerElement);
 		RenderedObj.appendChild(ActionList);
 
-		//set utility context
-		Util.Element.renderContext = RenderedObj;
-		Util.Element.render();
 		//style everything
 		_loadStyles();
 	};
@@ -235,9 +233,9 @@ var CalmConsole = function(options){
 				for(var prop in clone){
 					if(clone[prop] && typeof clone[prop] != 'function'){
 						if(typeof clone[prop] == 'object'){
-							//outputStr += '<p class="t1">I IS OBJECT LOL</p>'; //loop through objects here
+							//outputStr += '<p class="t1">I IS OBJECT LOL</p>'; //TODO: loop through objects here
 						}else {
-							outputStr += '<p class="t1">'+ prop + ' '+ Util.String.truncate(clone[prop], options)+'</p>';
+							outputStr += '<p class="t1">'+ prop + ' '+ Util.String._(clone[prop], options, true)+'</p>';
 						}
 					}
 				}
@@ -245,6 +243,7 @@ var CalmConsole = function(options){
 			outputObj.appendChild(action_toggle);
 			outputObj.innerHTML += outputStr;
 
+			//TODO: move to some sort of "onRenderComplete" callback here
 			outputObj.addEventListener('click', function(evt){
 				evt.preventDefault();
 
@@ -401,6 +400,7 @@ var CalmConsole = function(options){
  */
 
 	var Util = {
+		//TODO: add options to each element (currently ignored)
 		Element: {
 			_elements: [],
 			renderContext: {},
@@ -481,21 +481,21 @@ var CalmConsole = function(options){
 		String: {
 			truncate: function(str, options){
 				var type = typeof str,
-					output = null;
+					output = [];
 
 				if(type == 'string'){
 					var processed_str = str.substring(0, options.max_string_length).split(" ").slice(0, -1);
 
 					if(processed_str.length > 0){
-						output = '['+ type +']: <strong>' + this.stripHTML(processed_str.join(" ")) + "...</strong>";
+						output = this.stripHTML(processed_str.join(" "));
 					}else {
-						output = '['+ type +']: <strong>' + this.stripHTML(str) +'</strong>';
+						output = this.stripHTML(str);
 					}
 				}else {
-					output = '['+ type +']: <strong>' + this.stripHTML(str) + '</strong>';
+					output = this.stripHTML(str);
 				}
 
-				return output;
+				return [output, type];
 			},
 
 			stripHTML: function(str){
@@ -503,7 +503,34 @@ var CalmConsole = function(options){
 
 				tmp.innerHTML = str;
 
-				return tmp.textContent||tmp.innerText;
+				return tmp.textContent ||tmp.innerText;
+			},
+
+			formatInspectorOutput: function(arr){
+				var output = null;
+
+				if(arr[1] == 'string'){
+					if(arr[0].length > 0){
+						output = '['+ arr[1] +']: <strong>' + arr[0] + "...</strong>";
+					}else {
+						output = '['+ arr[1] +']: <strong>' + arr[0] +'</strong>';
+					}
+				}else {
+					output = '['+ arr[1] +']: <strong>' + arr[0] + '</strong>';
+				}
+
+				return output;
+			},
+
+			/*
+			 * Prints a truncated string, optionally can be formatted
+			 */
+			_: function(str, options, format_output){
+				if(format_output){
+					return this.formatInspectorOutput(this.truncate(str, options));
+				}else {
+					return this.truncate(str, options);
+				}
 			},
 		},
 	}
@@ -513,7 +540,7 @@ var CalmConsole = function(options){
  *  Overwrite console.[method]
  * ---------------------------------------------------------------------------------
  */
-	//console.log = function(toLog){return _logAction(toLog);};
+	//console.log = function(toLog){return _logAction(toLog);}; //commented out for development
 	console.warn = function(toLog){return _logAction(toLog, 'msg-warning');};
 	console.error = function(toLog){return _logAction(toLog, 'msg-error');};
 
