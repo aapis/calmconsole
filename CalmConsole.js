@@ -19,6 +19,7 @@ var CalmConsole = function(options){
 		RenderedObj = null,
 		Toggle = null,
 		Close = null,
+		A = null,
 		Loaded = false,
 		__actions = [];
 		
@@ -33,7 +34,7 @@ var CalmConsole = function(options){
 	 */
 	this.__init__ = function(){
 		options = {
-			useLocalStorage: options.useLocalStorage && localStorage || true,
+			useLocalStorage: options.useLocalStorage && localStorage || false,
 			position: options.position || 'bottom',
 			max_string_length: options.position || 20,
 		};
@@ -226,54 +227,34 @@ var CalmConsole = function(options){
 				outputObj.classList.add(classes);
 				outputObj.classList.add('msg-output-object');
 			var currObjName = (clone.constructor.name ? clone.constructor.name : clone.constructor.toString()),
-				outputStr = '';
+				outputStr = '',
+				action_toggle = document.createElement('span');
+				action_toggle.classList.add('action');
+				action_toggle.innerHTML = '&#x25B6; [object '+ currObjName +']';
+				A = action_toggle;
 
-
-
-			//current object
-				outputStr += '<span class="t1">'+ currObjName +' {';
-					for(var prop in clone){
-						//console.log('clone.'+ prop +' = '+ clone[prop]);
-						if(clone[prop] && typeof clone[prop] != 'function'){
-							outputStr += '<p class="t2">'+ prop + ' '+ Util.String.truncate(clone[prop], options)+'</p>';
+				for(var prop in clone){
+					if(clone[prop] && typeof clone[prop] != 'function'){
+						if(typeof clone[prop] == 'object'){
+							//outputStr += '<p class="t1">I IS OBJECT LOL</p>'; //loop through objects here
+						}else {
+							outputStr += '<p class="t1">'+ prop + ' '+ Util.String.truncate(clone[prop], options)+'</p>';
 						}
 					}
-				outputStr += '}</span>';
-			outputStr += '</p>';
-			
-			outputObj.innerHTML = outputStr;
-
-			//children
-			/*if(clone.children.length > 0){
-				outputObj.innerHTML += '<p><em>Children: <strong>'+ clone.children.length +'</strong></em><span class="t1">';
-
-				for(var i = 0; i < clone.children.length; i++){
-					var childObjName = (clone.children[i].constructor.name ? clone.children[i].constructor.name : clone.children[i].constructor.toString());
-
-						outputObj.innerHTML += '<span class="t2">'+ (i+1) + '. '+  childObjName +' {';
-							if(clone.children[i].classList.length > 0)
-								outputObj.innerHTML += '<span>classList: <strong>'+ clone.children[i].classList +'</strong>; </span>';
-							if(clone.children[i].id)
-								outputObj.innerHTML += '<span>id: <strong>'+ clone.children[i].id +'</strong>; </span>';
-							if(clone.children[i].offsetWidth > 0)
-								outputObj.innerHTML += '<span>width: <strong>'+ clone.children[i].offsetWidth +'px</strong>; </span>';
-							if(clone.children[i].offsetHeight > 0)
-								outputObj.innerHTML += '<span>width: <strong>'+ clone.children[i].offsetHeight +'px</strong>; </span>';
-						outputObj.innerHTML += '}</span>';
 				}
-					outputObj.innerHTML += '</span>';
-				outputObj.innerHTML += '</p>';
-			}*/
 
-	
-			//attach a listener so we can shrink/expand each object
+			outputObj.appendChild(action_toggle);
+			outputObj.innerHTML += outputStr;
+
 			outputObj.addEventListener('click', function(evt){
 				evt.preventDefault();
 
-				if(this.classList.contains('msg-output-object-expanded')){
-					this.classList.remove('msg-output-object-expanded');
+				if(this.classList.contains('expanded')){
+					this.querySelector('.action').innerHTML = '&#x25B6; [object '+ currObjName +']';
+					this.classList.remove('expanded');
 				}else {
-					this.classList.add('msg-output-object-expanded');
+					this.querySelector('.action').innerHTML = '&#x25BC; [object '+ currObjName +']';
+					this.classList.add('expanded');
 				}
 			});
 
@@ -292,6 +273,8 @@ var CalmConsole = function(options){
 			ActionList.appendChild(_outputObject(toLog, classes));
 		}
 
+		_loadListeners();
+
 		//__actions.push(_outputString(toLog, classes));
 		//console.log(__actions);
 
@@ -300,7 +283,7 @@ var CalmConsole = function(options){
 
 	function _loadStyles(){
 		var stylesheet = document.createElement('style');
-			stylesheet.innerHTML = '.CalmConsole ::selection {background: transparent;} .CalmConsole {position: fixed; '+ options.position +': 0px; width: 100%; height: 300px; font-size: 1em; color: black; overflow-y: auto; background: white; border-top: 1px solid rgba(0,0,0,0.3); font-family: "Lucida Sans Unicode";} .CalmConsole li {padding: 3px; margin: 0px; border-bottom: 1px solid rgba(0,0,0,0.3);} .CalmConsole li:hover {} .CalmConsole li.msg-output-object {height: 30px; overflow: hidden; cursor: pointer;} .CalmConsole li.msg-output-object-expanded {height: auto;} .CalmConsole .controls {position: absolute; right: 10px; top: -10%;} .CalmConsole.minimized {height: 41px; overflow: hidden; border-bottom: 0px;} .CalmConsole .msg-warning {background-color: #FCF8E3;} .CalmConsole .msg-special {background-color: #D9EDF7;} .CalmConsole .msg-error {background-color: #F2DEDE;} .CalmConsole .msg-success {background-color: #DFF0D8;} .CalmConsole ul {padding: 0px; margin: 0px;} .CalmConsole header {position: relative; font-family: Helvetica, Arial, sans-serif; border-bottom: 1px solid rgba(0,0,0,0.3); background-image: -ms-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -moz-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -o-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #FFFFFF), color-stop(1, #EEEEEE)); background-image: -webkit-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: linear-gradient(to bottom, #FFFFFF 0%, #EEEEEE 100%);} .CalmConsole header h2 {font-size: 1.5em; float: left; margin: 10px;} .CalmConsole header, .CalmConsole ul.msg-list {float: left; width: 100%; font-size: 11px;} .CalmConsole .controls a {color: black; font-size: 3.5em; margin-left: 0.5em; text-decoration: none; opacity: 0.4; text-shadow: 1px 1px 1px #ddd;} .CalmConsole .controls a:hover {color: #E2237D; opacity: 1;} .CalmConsole.hidden {display: none;} .CalmConsole.page-top {border-top: 1px solid rgba(0,0,0,0.3);} .CalmConsole .controls .toggle {font-size: 2.4em;} .CalmConsole p {padding: 0px; margin: 0px;} .CalmConsole .t1 {margin-left: 6px;} .CalmConsole .t2 {margin: 0px 12px; border-bottom: 1px solid rgba(0,0,0,0.1); padding: 3px 0px;}';
+			stylesheet.innerHTML = '.CalmConsole ::selection {background: transparent;} .CalmConsole {position: fixed; '+ options.position +': 0px; width: 100%; height: 300px; font-size: 1em; color: black; overflow-y: auto; background: white; border-top: 1px solid rgba(0,0,0,0.3); font-family: "Lucida Sans Unicode";} .CalmConsole li {padding: 3px; margin: 0px; border-bottom: 1px solid rgba(0,0,0,0.3);} .CalmConsole li:hover {} .CalmConsole li.msg-output-object {height: 17px; overflow: hidden; cursor: pointer;} .CalmConsole li.expanded {height: auto;} .CalmConsole .controls {position: absolute; right: 10px; top: -10%;} .CalmConsole.minimized {height: 41px; overflow: hidden; border-bottom: 0px;} .CalmConsole .msg-warning {background-color: #FCF8E3;} .CalmConsole .msg-special {background-color: #D9EDF7;} .CalmConsole .msg-error {background-color: #F2DEDE;} .CalmConsole .msg-success {background-color: #DFF0D8;} .CalmConsole ul {padding: 0px; margin: 0px;} .CalmConsole header {position: relative; font-family: Helvetica, Arial, sans-serif; border-bottom: 1px solid rgba(0,0,0,0.3); background-image: -ms-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -moz-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -o-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #FFFFFF), color-stop(1, #EEEEEE)); background-image: -webkit-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: linear-gradient(to bottom, #FFFFFF 0%, #EEEEEE 100%);} .CalmConsole header h2 {font-size: 1.5em; float: left; margin: 10px;} .CalmConsole header, .CalmConsole ul.msg-list {float: left; width: 100%; font-size: 11px;} .CalmConsole .controls a {color: black; font-size: 3.5em; margin-left: 0.5em; text-decoration: none; opacity: 0.4; text-shadow: 1px 1px 1px #ddd;} .CalmConsole .controls a:hover {color: #E2237D; opacity: 1;} .CalmConsole.hidden {display: none;} .CalmConsole.page-top {border-top: 1px solid rgba(0,0,0,0.3);} .CalmConsole .controls .toggle {font-size: 2.4em;} .CalmConsole p {padding: 0px; margin: 0px;} .CalmConsole .t1 {margin: 0px 12px; border-bottom: 1px solid rgba(0,0,0,0.1); padding: 3px 0px;}';
 
 		Loaded = true;
 
