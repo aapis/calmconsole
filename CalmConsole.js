@@ -508,6 +508,7 @@ var CalmConsole = function(options){
 		},
 
 		String: {
+			//move string formatting out of this function
 			truncate: function(str, options){
 				var type = typeof str,
 					output = [];
