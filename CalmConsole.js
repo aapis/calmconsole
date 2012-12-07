@@ -226,12 +226,11 @@ var CalmConsole = function(options){
 			var outputObj = document.createElement('li'), clone = Object.create(toLog);
 				outputObj.classList.add(classes);
 				outputObj.classList.add('msg-output-object');
-			var currObjName = (clone.constructor.name ? clone.constructor.name : clone.constructor.toString()),
-				outputStr = '',
+			var outputStr = '',
+				currObjName = _getObjectName(clone),
 				action_toggle = document.createElement('span');
 				action_toggle.classList.add('action');
-				action_toggle.innerHTML = '&#x25B6; [object '+ currObjName +']';
-				A = action_toggle;
+				action_toggle.innerHTML = '&#x25B6; '+ currObjName;
 
 				for(var prop in clone){
 					if(clone[prop] && typeof clone[prop] != 'function'){
@@ -250,10 +249,10 @@ var CalmConsole = function(options){
 				evt.preventDefault();
 
 				if(this.classList.contains('expanded')){
-					this.querySelector('.action').innerHTML = '&#x25B6; [object '+ currObjName +']';
+					this.querySelector('.action').innerHTML = '&#x25B6; '+ currObjName;
 					this.classList.remove('expanded');
 				}else {
-					this.querySelector('.action').innerHTML = '&#x25BC; [object '+ currObjName +']';
+					this.querySelector('.action').innerHTML = '&#x25BC; '+ currObjName;
 					this.classList.add('expanded');
 				}
 			});
@@ -262,6 +261,16 @@ var CalmConsole = function(options){
 		}
 		
 		CalmObj.error('Error: DOM Element Not Found');
+	};
+
+	function _getObjectName(obj){
+		if(obj.constructor.name){
+			return '[object '+ obj.constructor.name +']';
+		}else {
+			if(obj.constructor.toString().indexOf('[') === 0){
+				return obj.constructor.toString(); //not what I want to use here but oh well
+			}
+		}
 	};
 
 	function _logAction(toLog, classes){
@@ -273,8 +282,6 @@ var CalmConsole = function(options){
 			ActionList.appendChild(_outputObject(toLog, classes));
 		}
 
-		_loadListeners();
-
 		//__actions.push(_outputString(toLog, classes));
 		//console.log(__actions);
 
@@ -283,7 +290,7 @@ var CalmConsole = function(options){
 
 	function _loadStyles(){
 		var stylesheet = document.createElement('style');
-			stylesheet.innerHTML = '.CalmConsole ::selection {background: transparent;} .CalmConsole {position: fixed; '+ options.position +': 0px; width: 100%; height: 300px; font-size: 1em; color: black; overflow-y: auto; background: white; border-top: 1px solid rgba(0,0,0,0.3); font-family: "Lucida Sans Unicode";} .CalmConsole li {padding: 3px; margin: 0px; border-bottom: 1px solid rgba(0,0,0,0.3);} .CalmConsole li:hover {} .CalmConsole li.msg-output-object {height: 17px; overflow: hidden; cursor: pointer;} .CalmConsole li.expanded {height: auto;} .CalmConsole .controls {position: absolute; right: 10px; top: -10%;} .CalmConsole.minimized {height: 41px; overflow: hidden; border-bottom: 0px;} .CalmConsole .msg-warning {background-color: #FCF8E3;} .CalmConsole .msg-special {background-color: #D9EDF7;} .CalmConsole .msg-error {background-color: #F2DEDE;} .CalmConsole .msg-success {background-color: #DFF0D8;} .CalmConsole ul {padding: 0px; margin: 0px;} .CalmConsole header {position: relative; font-family: Helvetica, Arial, sans-serif; border-bottom: 1px solid rgba(0,0,0,0.3); background-image: -ms-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -moz-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -o-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #FFFFFF), color-stop(1, #EEEEEE)); background-image: -webkit-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: linear-gradient(to bottom, #FFFFFF 0%, #EEEEEE 100%);} .CalmConsole header h2 {font-size: 1.5em; float: left; margin: 10px;} .CalmConsole header, .CalmConsole ul.msg-list {float: left; width: 100%; font-size: 11px;} .CalmConsole .controls a {color: black; font-size: 3.5em; margin-left: 0.5em; text-decoration: none; opacity: 0.4; text-shadow: 1px 1px 1px #ddd;} .CalmConsole .controls a:hover {color: #E2237D; opacity: 1;} .CalmConsole.hidden {display: none;} .CalmConsole.page-top {border-top: 1px solid rgba(0,0,0,0.3);} .CalmConsole .controls .toggle {font-size: 2.4em;} .CalmConsole p {padding: 0px; margin: 0px;} .CalmConsole .t1 {margin: 0px 12px; border-bottom: 1px solid rgba(0,0,0,0.1); padding: 3px 0px;}';
+			stylesheet.innerHTML = '.CalmConsole ::selection {background: transparent;} .CalmConsole {position: fixed; '+ options.position +': 0px; width: 100%; height: 300px; font-size: 1em; color: black; overflow-y: auto; background: white; border-top: 1px solid rgba(0,0,0,0.3); font-family: "Lucida Sans Unicode", sans-serif;} .CalmConsole li {padding: 3px; margin: 0px; border-bottom: 1px solid rgba(0,0,0,0.3);} .CalmConsole li:hover {} .CalmConsole li.msg-output-object {height: 17px; overflow: hidden; cursor: pointer;} .CalmConsole li.expanded {height: auto;} .CalmConsole .controls {position: absolute; right: 10px; top: -10%;} .CalmConsole.minimized {height: 41px; overflow: hidden; border-bottom: 0px;} .CalmConsole .msg-warning {background-color: #FCF8E3;} .CalmConsole .msg-special {background-color: #D9EDF7;} .CalmConsole .msg-error {background-color: #F2DEDE;} .CalmConsole .msg-success {background-color: #DFF0D8;} .CalmConsole ul {padding: 0px; margin: 0px;} .CalmConsole header {position: relative; font-family: Helvetica, Arial, sans-serif; border-bottom: 1px solid rgba(0,0,0,0.3); background-image: -ms-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -moz-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -o-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #FFFFFF), color-stop(1, #EEEEEE)); background-image: -webkit-linear-gradient(top, #FFFFFF 0%, #EEEEEE 100%); background-image: linear-gradient(to bottom, #FFFFFF 0%, #EEEEEE 100%);} .CalmConsole header h2 {font-size: 1.5em; float: left; margin: 10px;} .CalmConsole header, .CalmConsole ul.msg-list {float: left; width: 100%; font-size: 11px;} .CalmConsole .controls a {color: black; font-size: 3.5em; margin-left: 0.5em; text-decoration: none; opacity: 0.4; text-shadow: 1px 1px 1px #ddd;} .CalmConsole .controls a:hover {color: #E2237D; opacity: 1;} .CalmConsole.hidden {display: none;} .CalmConsole.page-top {border-top: 1px solid rgba(0,0,0,0.3);} .CalmConsole .controls .toggle {font-size: 2.4em;} .CalmConsole p {padding: 0px; margin: 0px;} .CalmConsole .t1 {margin: 0px 12px; border-bottom: 1px solid rgba(0,0,0,0.1); padding: 3px 0px;}';
 
 		Loaded = true;
 
@@ -482,10 +489,10 @@ var CalmConsole = function(options){
 					if(processed_str.length > 0){
 						output = '['+ type +']: <strong>' + this.stripHTML(processed_str.join(" ")) + "...</strong>";
 					}else {
-						output = '['+ type +']: <strong>' + str +'</strong>';
+						output = '['+ type +']: <strong>' + this.stripHTML(str) +'</strong>';
 					}
 				}else {
-					output = '['+ type +']: <strong>' + str + '</strong>';
+					output = '['+ type +']: <strong>' + this.stripHTML(str) + '</strong>';
 				}
 
 				return output;
