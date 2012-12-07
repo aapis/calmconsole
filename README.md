@@ -19,4 +19,4 @@ You can invoke CC using the browser's built in console by calling ```calm.log('m
 This sucks, I could make it better!
 ===================================
 
-I'm always looking to improve my skills, and my projects, so fork away.
+I'm always looking to improve my skills, and my projects, so fork away.  Anything marked as TODO (or any of the issues, obviously) are a good place to start.
