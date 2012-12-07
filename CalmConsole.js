@@ -4,12 +4,6 @@
  * To Public License, Version 2, as published by Sam Hocevar. See
  * http://sam.zoy.org/wtfpl/COPYING for more details. */
 
-//TODO:
-//- push all logged messages to __actions (or something) and parse/display later to cut down on calls to .appendChild()
-//- add support for attachEvent in case mobile IE still doesn't support addEventListener
-//- add confirm functionality to close button, possibly in form of "command line" (which still needs to be written)?
-//- "command line" functionality
-//- truncate function needs some work
 var CalmConsole = function(options){
 	'use strict';
 
@@ -233,7 +227,7 @@ var CalmConsole = function(options){
 				for(var prop in clone){
 					if(clone[prop] && typeof clone[prop] != 'function'){
 						if(typeof clone[prop] == 'object'){
-							//outputStr += '<p class="t1">I IS OBJECT LOL</p>'; //TODO: loop through objects here
+							//outputStr += '<p class="t1">I IS OBJECT LOL</p>';
 						}else {
 							outputStr += '<p class="t1">'+ prop + ' '+ Util.String._(clone[prop], options, true)+'</p>';
 						}
