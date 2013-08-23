@@ -132,6 +132,8 @@ var CalmConsole = function(options){
 		ActionList.innerHTML = '';
 		
 		RenderedObj.classList.remove('hidden');
+
+		return true;
 	};
 
 	this.getState = function(state){
@@ -292,7 +294,7 @@ var CalmConsole = function(options){
 			'toggle': 0, //0 = show, 1 = hide
 			'close': 1, //0 = hide, 1 = show
 			'appstate': 'initial', //initial, busy, ready
-			'datalist': null,
+			'datalist': "",
 		};
 
 		//default to initial every time
@@ -310,7 +312,7 @@ var CalmConsole = function(options){
 		if(localStorage) localStorage.clear();
 
 		_store('toggle', DefaultStates.toggle, 'Thu, 01 Jan 1970 00:00:01 GMT');
-		_store('data', DefaultStates.datalist, 'Thu, 01 Jan 1970 00:00:01 GMT');
+		//_store('data', DefaultStates.datalist, 'Thu, 01 Jan 1970 00:00:01 GMT');
 		_store('close', DefaultStates.close, 'Thu, 01 Jan 1970 00:00:01 GMT');
 		_store('State.app', DefaultStates.appstate, 'Thu, 01 Jan 1970 00:00:01 GMT');
 	
@@ -349,8 +351,11 @@ var CalmConsole = function(options){
 		if(!item) return false;
 
 		var currentQueue = _getCurrentQueue();
+			currentQueue.push(JSON.stringify(data));
 
-		currentQueue.push(JSON.stringify(data));
+		if(item !== "data"){
+			currentQueue = JSON.stringify(data);	
+		}
 
 		if(!options.useLocalStorage){
 			return _setCookie('CalmConsole.'+ item, currentQueue, expiry);
@@ -360,11 +365,13 @@ var CalmConsole = function(options){
 	}
 
 	function _getCurrentQueue(){
-		if(options.useLocalStorage){
-			return [localStorage.getItem('CalmConsole.data')];
+		var queue = [];
+
+		if(options.useLocalStorage && localStorage.getItem('CalmConsole.data') && localStorage.getItem('CalmConsole.data').length > 3){
+			queue.push(localStorage.getItem('CalmConsole.data'));
 		}
 
-		return [];
+		return queue;
 	}
 
 	function _loadListeners(){
