@@ -90,15 +90,6 @@ var CalmConsole = function(options){
 	}
 
 	/*
-	 * public function clear() - Empty the console
-	 *
-	 * @param toLog [string|object] the item you want to log
-	 */
-	this.clear = function(){
-		ActionList.innerHTML = '';
-	};
-
-	/*
 	 * public function setOption() - may be removed
 	 *
 	 * @param property [string] the property you want to change
@@ -137,6 +128,8 @@ var CalmConsole = function(options){
 	 */
 	this.reset = function(){
 		_resetApplicationState();
+
+		ActionList.innerHTML = '';
 		
 		RenderedObj.classList.remove('hidden');
 	};
@@ -281,8 +274,7 @@ var CalmConsole = function(options){
 		//serialize output here, set CalmConsole.data to the result
 		//var x = JSON.stringify({'message': toLog, 'classes': classes});
 		//console.log(JSON.stringify({'message': toLog, 'classes': classes}));
-		_store('data', JSON.stringify({'message': toLog, 'classes': classes}));
-		
+		_store('data', {'message': toLog, 'classes': classes});
 
 		return null;
 	};
@@ -356,11 +348,23 @@ var CalmConsole = function(options){
 	function _store(item, data, expiry){
 		if(!item) return false;
 
+		var currentQueue = _getCurrentQueue();
+
+		currentQueue.push(JSON.stringify(data));
+
 		if(!options.useLocalStorage){
-			return _setCookie('CalmConsole.'+ item, data, expiry);
+			return _setCookie('CalmConsole.'+ item, currentQueue, expiry);
 		}else {
-			return localStorage.setItem('CalmConsole.'+ item, JSON.stringify(data));
+			return localStorage.setItem('CalmConsole.'+ item, currentQueue);
 		}
+	}
+
+	function _getCurrentQueue(){
+		if(options.useLocalStorage){
+			return [localStorage.getItem('CalmConsole.data')];
+		}
+
+		return [];
 	}
 
 	function _loadListeners(){
@@ -414,6 +418,7 @@ var CalmConsole = function(options){
 	function _getCookie(name){
 		var nameEQ = name + "=";
 		var ca = document.cookie.split(';');
+		
 		for(var i=0;i < ca.length;i++) {
 			var c = ca[i];
 			while (c.charAt(0)==' ') c = c.substring(1,c.length);
@@ -570,7 +575,7 @@ var CalmConsole = function(options){
  *   Overwrite console.[method] for browsers that support it
  * ---------------------------------------------------------------------------------
  */
- 	if(window.console){
+	if(window.console){
 		//console.log = function(toLog){return _logAction(toLog);}; //commented out for development
 		console.warn = function(toLog){return _logAction(toLog, 'msg-warning');};
 		console.error = function(toLog){return _logAction(toLog, 'msg-error');};
