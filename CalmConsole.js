@@ -31,7 +31,7 @@ var CalmConsole = function(options){
 			position: options.position || 'bottom',
 			max_string_length: options.max_string_length || 80,
 		};
-		
+
 		//create cookies or store initial data to localstorage db
 		_setDefaultApplicationState();
 		//create the UI
@@ -297,6 +297,8 @@ var CalmConsole = function(options){
 			'datalist': "",
 		};
 
+		DB.connect();
+
 		//default to initial every time
 		_setState('app', DefaultStates.appstate);
 
@@ -347,14 +349,23 @@ var CalmConsole = function(options){
 		}
 	}
 
+	/**
+	 * [_store description]
+	 * TODO: implement indexedDb instead of localstorage
+	 * @param  {[type]} item   [description]
+	 * @param  {[type]} data   [description]
+	 * @param  {[type]} expiry [description]
+	 * @return {[type]}        [description]
+	 */
 	function _store(item, data, expiry){
 		if(!item) return false;
 
 		var currentQueue = _getCurrentQueue();
-			currentQueue.push(JSON.stringify(data));
+		//console.log(currentQueue);
+			//currentQueue.push(JSON.stringify(data));
 
 		if(item !== "data"){
-			currentQueue = JSON.stringify(data);	
+			currentQueue = JSON.stringify(data);
 		}
 
 		if(!options.useLocalStorage){
@@ -432,11 +443,65 @@ var CalmConsole = function(options){
 			if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
 		}
 		return null;
-	}
+	};
+
+/*
+ * ---------------------------------------------------------------------------------
+ * DBO
+ * 
+ * Manages connections to the indexedDB-based database, localStorage as a
+ * fallback.
+ * ---------------------------------------------------------------------------------
+ */
+
+ 	var DB = {
+ 		instance: null,
+
+ 		connect: function(){
+ 			if(window.indexedDB){
+	 			var version = 1,
+	 				product = "CalmConsole",
+	 				request = indexedDB.open(product, version);
+
+	 			request.onupgradeneeded = function(evt){
+	 				var db = evt.target.result;
+
+	 				evt.target.onerror = DB.onError;
+
+	 				if(db.objectStoreNames.contains(product)){
+	 					db.deleteObjectStore(product);
+	 				}
+
+	 				var store = db.createObjectStore(product, {keyPath: "time"});
+	 			}
+
+	 			request.onsuccess = function(evt){
+	 				DB.instance = evt.target.result;
+	 				
+	 				//do getAllItems or something here
+
+	 			}
+
+	 			request.onerror = DB.onError;
+	 		}
+
+	 		return false;
+ 		},
+
+ 		test: function(arg){
+ 			console.log(arg);
+ 		},
+
+ 		close: function(){},
+
+ 		query: function(){},
+ 	};
 
 /*
  * ---------------------------------------------------------------------------------
  * Utilities
+ *
+ * String/object manipulation library
  * ---------------------------------------------------------------------------------
  */
 
