@@ -87,7 +87,21 @@ var CalmConsole = function(options){
 	 */
 	this.special = function(toLog){
 		return _logAction(toLog, 'msg-special');
-	}
+	};
+
+	/*
+	 * public function custom() - User defined styling options
+	 *
+	 * @param toLog [string|object] the item you want to log
+	 * @param options [object] styling options for the message
+	 *
+	 * options.prototype = {
+	 * 		
+	 * }
+	 */
+	this.custom = function(toLog, options){
+		return _logAction(toLog, 'msg-custom', options);
+	};
 
 	/*
 	 * public function setOption() - may be removed
@@ -109,7 +123,13 @@ var CalmConsole = function(options){
 	 * @param toLog [property] the option you wish to retreive
 	 */
 	this.getOption = function(property){
-		return options[property];
+		var ret = false;
+
+		if(options[property]){
+			ret = options[property];
+		}
+
+		return ret;
 	};
 
 	/*
@@ -202,17 +222,19 @@ var CalmConsole = function(options){
 	 * @param toLog [string]
 	 * @param classes [string|array]
 	 */
-	function _outputString(toLog, classes){
+	function _outputString(toLog, classes, opts){
 		var htmlObj = document.createElement('li');
 			htmlObj.innerHTML = toLog;
 			classes = (!classes ? 'msg-log' : classes);
+
+			//merge opts with htmlObj here
 
 		htmlObj.classList.add(classes);
 		
 		return htmlObj;
 	};
 
-	function _outputObject(toLog, classes){
+	function _outputObject(toLog, classes, opts){
 		if(toLog){
 			var outputObj = document.createElement('li'), clone = Object.create(toLog);
 				outputObj.classList.add(classes);
@@ -222,6 +244,8 @@ var CalmConsole = function(options){
 				action_toggle = document.createElement('span');
 				action_toggle.classList.add('action');
 				action_toggle.innerHTML = '&#x25B6; '+ currObjName;
+
+				//merge opts with outputObj here
 
 				for(var prop in clone){
 					if(clone[prop] && typeof clone[prop] != 'function'){
@@ -255,6 +279,7 @@ var CalmConsole = function(options){
 		CalmObj.error('Error: DOM Element Not Found');
 	};
 
+	//move to Util.something
 	function _getObjectName(obj){
 		if(obj.constructor.name){
 			return '[object '+ obj.constructor.name +']';
@@ -265,11 +290,11 @@ var CalmConsole = function(options){
 		}
 	};
 
-	function _logAction(toLog, classes){
+	function _logAction(toLog, classes, options){
 		if(typeof toLog == 'string'){
-			ActionList.appendChild(_outputString(toLog, classes));
+			ActionList.appendChild(_outputString(toLog, classes, options));
 		}else {
-			ActionList.appendChild(_outputObject(toLog, classes));
+			ActionList.appendChild(_outputObject(toLog, classes, options));
 		}
 
 		//__actions.push(_outputString(toLog, classes));
@@ -447,7 +472,7 @@ var CalmConsole = function(options){
 
 /*
  * ---------------------------------------------------------------------------------
- * DBO
+ * Database object
  * 
  * Manages connections to the indexedDB-based database, localStorage as a
  * fallback.
@@ -466,7 +491,7 @@ var CalmConsole = function(options){
 	 			request.onupgradeneeded = function(evt){
 	 				var db = evt.target.result;
 
-	 				evt.target.onerror = DB.onError;
+	 				evt.target.onerror = DB.error;
 
 	 				if(db.objectStoreNames.contains(product)){
 	 					db.deleteObjectStore(product);
@@ -479,22 +504,48 @@ var CalmConsole = function(options){
 	 				DB.instance = evt.target.result;
 	 				
 	 				//do getAllItems or something here
+	 				DB.get("f");
 
 	 			}
 
-	 			request.onerror = DB.onError;
+	 			
+
+	 			request.onerror = DB.error;
 	 		}
 
 	 		return false;
  		},
 
- 		test: function(arg){
- 			console.log(arg);
+ 		error: function(arg){
+ 			console.error(arg);
  		},
 
  		close: function(){},
 
- 		query: function(){},
+ 		query: function(query){
+ 			var db = this.instance;
+
+ 			if(query === undefined){
+ 				query = ""; //get all items
+ 			}
+ 			console.log(query);
+ 		},
+
+ 		get: function(arg){
+ 			switch(arg){
+ 				case "all":
+ 					this.query("HAHA");
+ 					break;
+
+ 				default:
+ 					this.query();
+ 			}
+ 		},
+
+ 		add: function(text){
+
+ 		},
+
  	};
 
 /*
@@ -587,22 +638,24 @@ var CalmConsole = function(options){
 		String: {
 			//move string formatting out of this function
 			truncate: function(str, options){
-				var type = typeof str,
-					output = [];
+				var ret = {
+						type: typeof str,
+						output: [],
+					};
 
-				if(type == 'string'){
+				if(ret.type == 'string'){
 					var processed_str = str.substring(0, options.max_string_length).split(" ").slice(0, -1);
 
 					if(processed_str.length > 0){
-						output = this.stripHTML(processed_str.join(" "));
+						ret.output = this.stripHTML(processed_str.join(" "));
 					}else {
-						output = this.stripHTML(str);
+						ret.output = this.stripHTML(str);
 					}
 				}else {
-					output = this.stripHTML(str);
+					ret.output = this.stripHTML(str);
 				}
 
-				return [output, type];
+				return ret;
 			},
 
 			stripHTML: function(str){
@@ -610,7 +663,7 @@ var CalmConsole = function(options){
 
 				tmp.innerHTML = str;
 
-				return tmp.textContent ||tmp.innerText;
+				return tmp.textContent || tmp.innerText;
 			},
 
 			formatInspectorOutput: function(arr){
