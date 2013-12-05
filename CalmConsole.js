@@ -326,8 +326,6 @@ var CalmConsole = function(options){
 		//instantiate the database object
 		window.DBO = new DB();
 
-		console.log(DBO.instance);
-
 		//default to initial every time
 		_setState('app', DefaultStates.appstate);
 
@@ -486,25 +484,25 @@ var CalmConsole = function(options){
  	var DB = function(){ //must make this a function, not an object
 
  		this.instance = null;
+ 		this.product = "CalmConsole";
 
  		this.connect = function(){
  			if(window.indexedDB){
 	 			var version = 1,
-	 				product = "CalmConsole",
-	 				request = indexedDB.open(product, version),
-	 				_DBO = this;
+	 				_DBO = this,
+	 				request = indexedDB.open(this.product, version);
 
 	 			request.onupgradeneeded = function(evt){
 	 				var db = evt.target.result;
 
 	 				evt.target.onerror = _DBO.error;
 
-	 				if(db.objectStoreNames.contains(product)){
-	 					db.deleteObjectStore(product);
+	 				if(db.objectStoreNames.contains(_DBO.product)){
+	 					db.deleteObjectStore(_DBO.product);
 	 				}
 
-	 				var store = db.createObjectStore(product, {keyPath: "time"});
-	 			}
+	 				var store = db.createObjectStore(_DBO.product, {keyPath: "time"});
+	 			};
 
 	 			request.onsuccess = function(evt){
 	 				_DBO.instance = evt.target.result;
@@ -512,7 +510,7 @@ var CalmConsole = function(options){
 	 				//_DBO.get("item", 1);
 	 				_DBO.get("all");
 
-	 			}
+	 			};
 
 	 			request.onerror = _DBO.error;
 	 		}else {
@@ -532,7 +530,8 @@ var CalmConsole = function(options){
  			if(query === undefined){
  				query = ""; //get all items
  			}
- 			console.log(query);
+ 			var transaction = this.instance.transaction([this.product], "readwrite"),
+ 				store = transaction.objectStore(this.product);
  		};
 
  		this.get = function(type, id){
@@ -550,9 +549,8 @@ var CalmConsole = function(options){
  		this.add = function(text){
 
  		};
-
+ 		
  		return this.connect();
-
  	};
 
  	/*var DB = { //must make this a function, not an object
