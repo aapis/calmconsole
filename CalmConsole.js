@@ -322,7 +322,11 @@ var CalmConsole = function(options){
 			'datalist': "",
 		};
 
-		DB.connect();
+		//DB.connect();
+		//instantiate the database object
+		window.DBO = new DB();
+
+		console.log(DBO.instance);
 
 		//default to initial every time
 		_setState('app', DefaultStates.appstate);
@@ -479,7 +483,79 @@ var CalmConsole = function(options){
  * ---------------------------------------------------------------------------------
  */
 
- 	var DB = {
+ 	var DB = function(){ //must make this a function, not an object
+
+ 		this.instance = null;
+
+ 		this.connect = function(){
+ 			if(window.indexedDB){
+	 			var version = 1,
+	 				product = "CalmConsole",
+	 				request = indexedDB.open(product, version),
+	 				_DBO = this;
+
+	 			request.onupgradeneeded = function(evt){
+	 				var db = evt.target.result;
+
+	 				evt.target.onerror = _DBO.error;
+
+	 				if(db.objectStoreNames.contains(product)){
+	 					db.deleteObjectStore(product);
+	 				}
+
+	 				var store = db.createObjectStore(product, {keyPath: "time"});
+	 			}
+
+	 			request.onsuccess = function(evt){
+	 				_DBO.instance = evt.target.result;
+	 				//do getAllItems or something here
+	 				//_DBO.get("item", 1);
+	 				_DBO.get("all");
+
+	 			}
+
+	 			request.onerror = _DBO.error;
+	 		}else {
+	 			this.instance = window.localStorage;
+	 		}
+
+	 		return this.instance;
+ 		};
+
+ 		this.error = function(){
+ 			console.error(arg);
+ 		};
+
+ 		this.query = function(query){
+ 			var db = this.instance;
+
+ 			if(query === undefined){
+ 				query = ""; //get all items
+ 			}
+ 			console.log(query);
+ 		};
+
+ 		this.get = function(type, id){
+ 			switch(type){
+ 				case "all":
+ 					this.query("HAHA");
+ 					break;
+
+ 				default:
+ 				case "item":
+ 					this.query(id);
+ 			}
+ 		};
+
+ 		this.add = function(text){
+
+ 		};
+
+ 		return this.connect();
+
+ 	};
+
+ 	/*var DB = { //must make this a function, not an object
  		instance: null,
 
  		connect: function(){
@@ -511,6 +587,8 @@ var CalmConsole = function(options){
 	 			
 
 	 			request.onerror = DB.error;
+	 		}else {
+	 			this.instance = window.localStorage;
 	 		}
 
 	 		return false;
@@ -546,7 +624,7 @@ var CalmConsole = function(options){
 
  		},
 
- 	};
+ 	};*/
 
 /*
  * ---------------------------------------------------------------------------------
