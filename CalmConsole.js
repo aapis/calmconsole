@@ -482,13 +482,12 @@ var CalmConsole = function(options){
  */
 
  	var DB = function(){ //must make this a function, not an object
-
  		this.instance = null;
  		this.product = "CalmConsole";
 
  		this.connect = function(){
  			if(window.indexedDB){
-	 			var version = 1,
+	 			var version = 4,
 	 				_DBO = this,
 	 				request = indexedDB.open(this.product, version);
 
@@ -507,9 +506,7 @@ var CalmConsole = function(options){
 	 			request.onsuccess = function(evt){
 	 				_DBO.instance = evt.target.result;
 	 				//do getAllItems or something here
-	 				//_DBO.get("item", 1);
-	 				_DBO.get("all");
-
+	 				_DBO.get("item", 3);
 	 			};
 
 	 			request.onerror = _DBO.error;
@@ -520,18 +517,25 @@ var CalmConsole = function(options){
 	 		return this.instance;
  		};
 
- 		this.error = function(){
- 			console.error(arg);
+ 		this.error = function(evt){
+ 			return CalmObj.error("["+ evt.target.error.name + "] "+ evt.target.error.message);
  		};
 
- 		this.query = function(query){
- 			var db = this.instance;
-
- 			if(query === undefined){
- 				query = ""; //get all items
+ 		this.query = function(id){
+ 			if(isNaN(id)){
+ 				return CalmObj.error("Could not retrieve data for item #"+ id);
  			}
+ 			//console.log(this.instance);
  			var transaction = this.instance.transaction([this.product], "readwrite"),
- 				store = transaction.objectStore(this.product);
+ 			 	store = transaction.objectStore(this.product),
+ 			 	keyRange = IDBKeyRange.only(id);
+
+ 			 console.log(keyRange);
+
+
+ 			//store.autoIncrememnt = true;
+
+ 			//console.log(store);
  		};
 
  		this.get = function(type, id){
