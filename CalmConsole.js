@@ -32,7 +32,7 @@ var CalmConsole = function(options){
 			position: options.position || 'bottom',
 			max_string_length: options.max_string_length || 80,
 		};
-		
+
 		//create cookies or store initial data to localstorage db
 		_setDefaultApplicationState();
 		//create the UI
@@ -88,7 +88,21 @@ var CalmConsole = function(options){
 	 */
 	this.special = function(toLog){
 		return _logAction(toLog, 'msg-special');
-	}
+	};
+
+	/*
+	 * public function custom() - User defined styling options
+	 *
+	 * @param toLog [string|object] the item you want to log
+	 * @param options [object] styling options for the message
+	 *
+	 * options.prototype = {
+	 * 		
+	 * }
+	 */
+	this.custom = function(toLog, options){
+		return _logAction(toLog, 'msg-custom', options);
+	};
 
 	/*
 	 * public function setOption() - may be removed
@@ -110,7 +124,13 @@ var CalmConsole = function(options){
 	 * @param toLog [property] the option you wish to retreive
 	 */
 	this.getOption = function(property){
-		return options[property];
+		var ret = false;
+
+		if(options[property]){
+			ret = options[property];
+		}
+
+		return ret;
 	};
 
 	/*
@@ -203,17 +223,19 @@ var CalmConsole = function(options){
 	 * @param toLog [string]
 	 * @param classes [string|array]
 	 */
-	function _outputString(toLog, classes){
+	function _outputString(toLog, classes, opts){
 		var htmlObj = document.createElement('li');
 			htmlObj.innerHTML = toLog;
 			classes = (!classes ? 'msg-log' : classes);
+
+			//merge opts with htmlObj here
 
 		htmlObj.classList.add(classes);
 		
 		return htmlObj;
 	};
 
-	function _outputObject(toLog, classes){
+	function _outputObject(toLog, classes, opts){
 		if(toLog){
 			var outputObj = document.createElement('li'), clone = Object.create(toLog);
 				outputObj.classList.add(classes);
@@ -223,6 +245,8 @@ var CalmConsole = function(options){
 				action_toggle = document.createElement('span');
 				action_toggle.classList.add('action');
 				action_toggle.innerHTML = '&#x25B6; '+ currObjName;
+
+				//merge opts with outputObj here
 
 				for(var prop in clone){
 					if(clone[prop] && typeof clone[prop] != 'function'){
@@ -256,6 +280,7 @@ var CalmConsole = function(options){
 		CalmObj.error('Error: DOM Element Not Found');
 	};
 
+	//move to Util.something
 	function _getObjectName(obj){
 		if(obj.constructor.name){
 			return '[object '+ obj.constructor.name +']';
@@ -266,11 +291,11 @@ var CalmConsole = function(options){
 		}
 	};
 
-	function _logAction(toLog, classes){
+	function _logAction(toLog, classes, options){
 		if(typeof toLog == 'string'){
-			ActionList.appendChild(_outputString(toLog, classes));
+			ActionList.appendChild(_outputString(toLog, classes, options));
 		}else {
-			ActionList.appendChild(_outputObject(toLog, classes));
+			ActionList.appendChild(_outputObject(toLog, classes, options));
 		}
 
 		//__actions.push(_outputString(toLog, classes));
@@ -298,8 +323,9 @@ var CalmConsole = function(options){
 			'datalist': "",
 		};
 
-		//instantiate the database
-		DB = _getDatabase();
+		//DB.connect();
+		//instantiate the database object
+		window.DBO = new DB();
 
 		//default to initial every time
 		_setState('app', DefaultStates.appstate);
@@ -351,6 +377,14 @@ var CalmConsole = function(options){
 		}
 	}
 
+	/**
+	 * [_store description]
+	 * TODO: implement indexedDb instead of localstorage
+	 * @param  {[type]} item   [description]
+	 * @param  {[type]} data   [description]
+	 * @param  {[type]} expiry [description]
+	 * @return {[type]}        [description]
+	 */
 	function _store(item, data, expiry){
 		//var req = _getDatabase(); //do _getDatabase on app load
 		console.log(DB);
@@ -383,10 +417,11 @@ var CalmConsole = function(options){
 		if(!item) return false;
 
 		var currentQueue = _getCurrentQueue();
-			currentQueue.push(JSON.stringify(data));
+		//console.log(currentQueue);
+			//currentQueue.push(JSON.stringify(data));
 
 		if(item !== "data"){
-			currentQueue = JSON.stringify(data);	
+			currentQueue = JSON.stringify(data);
 		}
 
 		if(!options.useLocalStorage){
@@ -464,11 +499,169 @@ var CalmConsole = function(options){
 			if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
 		}
 		return null;
-	}
+	};
+
+/*
+ * ---------------------------------------------------------------------------------
+ * Database object
+ * 
+ * Manages connections to the indexedDB-based database, localStorage as a
+ * fallback.
+ * ---------------------------------------------------------------------------------
+ */
+
+ 	var DB = function(){ //must make this a function, not an object
+ 		this.instance = null;
+ 		this.product = "CalmConsole";
+
+ 		this.connect = function(){
+ 			if(window.indexedDB){
+	 			var version = 4,
+	 				_DBO = this,
+	 				request = indexedDB.open(this.product, version);
+
+	 			request.onupgradeneeded = function(evt){
+	 				var db = evt.target.result;
+
+	 				evt.target.onerror = _DBO.error;
+
+	 				if(db.objectStoreNames.contains(_DBO.product)){
+	 					db.deleteObjectStore(_DBO.product);
+	 				}
+
+	 				var store = db.createObjectStore(_DBO.product, {keyPath: "time"});
+	 			};
+
+	 			request.onsuccess = function(evt){
+	 				_DBO.instance = evt.target.result;
+	 				//do getAllItems or something here
+	 				_DBO.get("item", 3);
+	 			};
+
+	 			request.onerror = _DBO.error;
+	 		}else {
+	 			this.instance = window.localStorage;
+	 		}
+
+	 		return this.instance;
+ 		};
+
+ 		this.error = function(evt){
+ 			return CalmObj.error("["+ evt.target.error.name + "] "+ evt.target.error.message);
+ 		};
+
+ 		this.query = function(id){
+ 			if(isNaN(id)){
+ 				return CalmObj.error("Could not retrieve data for item #"+ id);
+ 			}
+ 			//console.log(this.instance);
+ 			var transaction = this.instance.transaction([this.product], "readwrite"),
+ 			 	store = transaction.objectStore(this.product),
+ 			 	keyRange = IDBKeyRange.only(id);
+
+ 			 console.log(keyRange);
+
+
+ 			//store.autoIncrememnt = true;
+
+ 			//console.log(store);
+ 		};
+
+ 		this.get = function(type, id){
+ 			switch(type){
+ 				case "all":
+ 					this.query("HAHA");
+ 					break;
+
+ 				default:
+ 				case "item":
+ 					this.query(id);
+ 			}
+ 		};
+
+ 		this.add = function(text){
+
+ 		};
+ 		
+ 		return this.connect();
+ 	};
+
+ 	/*var DB = { //must make this a function, not an object
+ 		instance: null,
+
+ 		connect: function(){
+ 			if(window.indexedDB){
+	 			var version = 1,
+	 				product = "CalmConsole",
+	 				request = indexedDB.open(product, version);
+
+	 			request.onupgradeneeded = function(evt){
+	 				var db = evt.target.result;
+
+	 				evt.target.onerror = DB.error;
+
+	 				if(db.objectStoreNames.contains(product)){
+	 					db.deleteObjectStore(product);
+	 				}
+
+	 				var store = db.createObjectStore(product, {keyPath: "time"});
+	 			}
+
+	 			request.onsuccess = function(evt){
+	 				DB.instance = evt.target.result;
+	 				
+	 				//do getAllItems or something here
+	 				DB.get("f");
+
+	 			}
+
+	 			
+
+	 			request.onerror = DB.error;
+	 		}else {
+	 			this.instance = window.localStorage;
+	 		}
+
+	 		return false;
+ 		},
+
+ 		error: function(arg){
+ 			console.error(arg);
+ 		},
+
+ 		close: function(){},
+
+ 		query: function(query){
+ 			var db = this.instance;
+
+ 			if(query === undefined){
+ 				query = ""; //get all items
+ 			}
+ 			console.log(query);
+ 		},
+
+ 		get: function(arg){
+ 			switch(arg){
+ 				case "all":
+ 					this.query("HAHA");
+ 					break;
+
+ 				default:
+ 					this.query();
+ 			}
+ 		},
+
+ 		add: function(text){
+
+ 		},
+
+ 	};*/
 
 /*
  * ---------------------------------------------------------------------------------
  * Utilities
+ *
+ * String/object manipulation library
  * ---------------------------------------------------------------------------------
  */
 
@@ -554,22 +747,24 @@ var CalmConsole = function(options){
 		String: {
 			//move string formatting out of this function
 			truncate: function(str, options){
-				var type = typeof str,
-					output = [];
+				var ret = {
+						type: typeof str,
+						output: [],
+					};
 
-				if(type == 'string'){
+				if(ret.type == 'string'){
 					var processed_str = str.substring(0, options.max_string_length).split(" ").slice(0, -1);
 
 					if(processed_str.length > 0){
-						output = this.stripHTML(processed_str.join(" "));
+						ret.output = this.stripHTML(processed_str.join(" "));
 					}else {
-						output = this.stripHTML(str);
+						ret.output = this.stripHTML(str);
 					}
 				}else {
-					output = this.stripHTML(str);
+					ret.output = this.stripHTML(str);
 				}
 
-				return [output, type];
+				return ret;
 			},
 
 			stripHTML: function(str){
@@ -577,7 +772,7 @@ var CalmConsole = function(options){
 
 				tmp.innerHTML = str;
 
-				return tmp.textContent ||tmp.innerText;
+				return tmp.textContent || tmp.innerText;
 			},
 
 			formatInspectorOutput: function(arr){
